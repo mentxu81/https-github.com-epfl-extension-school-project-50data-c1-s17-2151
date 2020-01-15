@@ -11,10 +11,10 @@ library(readr)
 library(tidyverse) #includes dplyr
 
 #import the cvs file
-professors <- read_csv("M:/proyectos/curso R/Documentacion/zz PROYECTOS/Project 1/professors.csv") %>%
+professors <- read_csv("professors.csv") %>%
   rename(Questions = `X1`)
 
-students <- read_csv("M:/proyectos/curso R/Documentacion/zz PROYECTOS/Project 1/students.csv") %>%
+students <- read_csv("students.csv") %>%
   rename (Questions = `X1`)
 
 ```
