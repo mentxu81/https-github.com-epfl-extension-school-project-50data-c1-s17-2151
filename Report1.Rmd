@@ -1,0 +1,199 @@
+---
+title: "Report 1: Survey on students & professors"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r message=FALSE, warning=FALSE}
+#Libraries required
+library(readr)
+library(tidyverse) #includes dplyr
+
+#import the cvs file
+professors <- read_csv("M:/proyectos/curso R/Documentacion/zz PROYECTOS/Project 1/professors.csv") %>%
+  rename(Questions = `X1`)
+
+students <- read_csv("M:/proyectos/curso R/Documentacion/zz PROYECTOS/Project 1/students.csv") %>%
+  rename (Questions = `X1`)
+
+```
+
+
+
+
+
+#### PART 1 
+#### information regarding the number of answers obtained
+
+
+```{r}
+Stotal_answers <- mutate(students,Total_answers_per_question = Disagree + Agree + `Totally agree` + `Totally Disagree`) %>%
+  summarise(Stotal_answers = sum(Total_answers_per_question)) %>%
+  pull()
+
+Sagree <- students %>%
+  summarise(Sagree = sum(Agree)) %>%
+  pull()
+
+Sdisagree <- students %>%
+  summarise(Sdisagree = sum(Disagree)) %>%
+  pull()
+
+Stagree <- students %>%
+  summarise(Stagree = sum(`Totally agree`)) %>%
+  pull()
+
+Stdisagree <- students %>%
+  summarise(Stdisagree = sum(`Totally Disagree`)) %>%
+  pull()
+
+```
+
+> **From the students**, we got `r Sagree` agree, `r Sdisagree` disagree, `r Stagree` totally agree, and `r Stdisagree` totally disagree.
+This makes a **total amount of `r Stotal_answers` answers** provided.
+
+
+
+
+
+
+
+```{r}
+Ptotal_answers <- mutate(professors,Total_answers_per_question = Disagree + Agree + `Totally agree` + `Totally Disagree`) %>%
+  summarise(Ptotal_answers = sum(Total_answers_per_question)) %>%
+  pull()
+
+Pagree <- professors %>%
+  summarise(Pagree = sum(Agree)) %>%
+  pull()
+
+Pdisagree <- professors %>%
+  summarise(Pdisagree = sum(Disagree)) %>%
+  pull()
+
+Ptagree <- professors %>%
+  summarise(Ptagree = sum(`Totally agree`)) %>%
+  pull()
+
+Ptdisagree <- professors %>%
+  summarise(Ptdisagree = sum(`Totally Disagree`)) %>%
+  pull()
+
+```
+
+> **From the professors**, we got `r Pagree` agree, `r Pdisagree` disagree, `r Ptagree` totally agree, and `r Ptdisagree` totally disagree.
+This makes a **total amount of `r Ptotal_answers` answers** provided.
+
+
+
+
+
+
+
+
+
+```{r}
+
+Panswers <- if(mutate(professors,Total_answers_per_question = Disagree + Agree + `Totally agree` + `Totally Disagree`) %>%
+   summarise(xDifferent = n_distinct(Total_answers_per_question))  == 1){
+  str_glue("all ")
+} else {
+  str_glue("not all ")
+}
+
+
+```
+
+> On the report, **`r Panswers` questions** have been replied with the same amount of answers.
+
+
+
+
+
+
+
+#### PART 2 
+#### side by side charts comparing the distribution of answers, students vs professors
+
+```{r}
+
+joined_tables <- bind_cols(
+  (professors %>%
+     rename(PA = Agree,
+            PD = Disagree,
+            PTD = `Totally Disagree`,
+            PTA = `Totally agree`)),
+  (select(students, -Questions) %>%  #we have already the same Questions index from the Professors table
+     rename(SA = Agree,
+            SD = Disagree,
+            STD = `Totally Disagree`,
+            STA = `Totally agree`))
+) 
+
+
+
+joined_tables %>%
+  gather(PA, PD, PTA, PTD, SA, SD, STD, STA, key = "Type_of_response", value = "amount_of_responses")%>%
+  ggplot(mapping = aes(x= `Type_of_response`,
+                     y=`amount_of_responses`,
+                     fill = factor(Type_of_response) )) +
+  geom_bar(stat = "identity") +
+  facet_wrap("Questions") +                    #groups the outputs based on the "Questions" value
+  theme(legend.title = element_blank(),        #removes legend title
+        axis.text.x = element_blank(),         #removes label info on axis x
+        axis.text.y.left = element_text(size = 7)) +    #changes the text size on the labels on axis y
+  
+  
+  ylab("amount of responses") + xlab("type of responses")+  #axel titles
+  ggtitle(">>> distribution of answers <<<") %>%  #main title
+  
+  view()
+
+```
+
+
+
+
+
+
+#### PART 3 
+#### MODE for students & professors
+
+```{r}
+gathered.data <- joined_tables %>%
+  gather(PA, PD, PTA, PTD, SA, SD, STD, STA, key = "Type_of_response", value = "amount_of_responses")
+
+gather.students <- students %>%
+  gather(-Questions, key = "Response", value = "frequency") %>%
+  arrange(Questions) %>%
+  mutate(resp.group = "Student") 
+
+gs <- gather.students %>%
+  group_by(Questions) %>% 
+  mutate (max.freq = max(frequency)) %>%
+  ungroup() %>%
+  filter(max.freq == frequency) %>%
+  select(-frequency, -resp.group, Mode = Response)
+  
+  
+
+gather.professors <- professors %>%
+  gather(-Questions, key = "Response", value = "frequency") %>%
+  arrange(Questions) %>%
+  mutate(resp.group = "Student") 
+
+gp <- gather.professors %>%
+  group_by(Questions) %>% 
+  mutate (max.freq = max(frequency)) %>%
+  ungroup() %>%
+  filter(max.freq == frequency) %>%
+  select(-frequency, -resp.group, Mode = Response)
+
+
+
+knitr::kable(gs, caption = "Mode for student's replies")
+knitr::kable(gp, caption = "Mode for professor's replies")
+```
+
+
